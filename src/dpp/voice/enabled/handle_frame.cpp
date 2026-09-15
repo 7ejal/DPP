@@ -94,7 +94,7 @@ bool discord_voice_client::handle_frame(const std::string &data, ws_opcode opcod
 	/**
 	 * MLS frames come in as type OP_BINARY, we can also reply to them as type OP_BINARY.
 	 */
-	if (opcode == OP_BINARY && data.size() >= sizeof(dave_binary_header_t)) {
+	if (opcode == OP_BINARY && data.size() >= 3) {
 
 		dave_binary_header_t dave_header(data);
 

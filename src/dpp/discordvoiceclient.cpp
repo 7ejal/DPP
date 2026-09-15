@@ -82,14 +82,21 @@ uint16_t dave_binary_header_t::get_transition_id() const {
 }
 
 dave_binary_header_t::dave_binary_header_t(const std::string& buffer) {
-	if (buffer.length() < 5) {
-		throw dpp::length_exception("DAVE binary buffer too short (<5)");
+	if (buffer.length() < 3) {
+		throw dpp::length_exception("DAVE binary buffer too short (<3)");
 	}
-	seq = (buffer[0] << 8) | buffer[1];
-	opcode = buffer[2];
-	transition_id = (buffer[3] << 8) | buffer[4];
+	seq = (static_cast<uint16_t>(static_cast<uint8_t>(buffer[0])) << 8)
+		| static_cast<uint8_t>(buffer[1]);
+	opcode = static_cast<uint8_t>(buffer[2]);
 
 	bool has_transition_id = opcode == voice_client_dave_mls_welcome || opcode == voice_client_dave_announce_commit_transition;
+	if (has_transition_id && buffer.length() < 5) {
+		throw dpp::length_exception("DAVE binary transition buffer too short (<5)");
+	}
+	transition_id = has_transition_id
+		? (static_cast<uint16_t>(static_cast<uint8_t>(buffer[3])) << 8)
+			| static_cast<uint8_t>(buffer[4])
+		: 0;
 	package.assign(buffer.begin() + (has_transition_id ? 5 : 3), buffer.end());
 }
 
