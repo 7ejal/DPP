@@ -340,7 +340,6 @@ void discord_voice_client::one_second_timer()
 		if (this->heartbeat_interval) {
 			/* Check if we're due to emit a heartbeat */
 			if (time(nullptr) > last_heartbeat + ((heartbeat_interval / 1000.0) * 0.75)) {
-				log(dpp::ll_trace, "Sending voice heartbeat interval_ms=" + std::to_string(heartbeat_interval) + " seq_ack=" + std::to_string(receive_sequence));
 				queue_message(json({
 					{"op", voice_opcode_connection_heartbeat},
 					{
