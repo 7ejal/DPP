@@ -235,16 +235,8 @@ void discord_voice_client::error(uint32_t errorcode)
 	}
 	log(dpp::ll_warning, "Voice session error: " + std::to_string(errorcode) + " on channel " + std::to_string(channel_id) + ": " + error);
 
-	const bool reidentify = errorcode == 4006;
-	/* A 4006 invalidates Voice Gateway resume state, but the current main-Gateway
-	 * voice credentials can still start a fresh Voice Gateway session. */
-	if (reidentify) {
-		stop_audio();
-		modes.clear();
-		this->terminating = false;
-		log(dpp::ll_warning, "Voice session invalid; reconnecting with identify");
 	/* Errors 4004...4016 except 4014 are fatal and cause termination of the voice session */
-	} else if (errorcode >= 4003) {
+	if (errorcode >= 4003) {
 		stop_audio();
 		this->terminating = true;
 		log(dpp::ll_error, "This is a non-recoverable error, giving up on voice connection");
