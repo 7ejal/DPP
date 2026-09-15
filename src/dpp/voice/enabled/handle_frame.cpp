@@ -335,6 +335,7 @@ bool discord_voice_client::handle_frame(const std::string &data, ws_opcode opcod
 			break;
 			/* Voice resume */
 			case voice_opcode_connection_resumed:
+				session_invalid = false;
 				log(ll_debug, "Voice connection resumed");
 			break;
 			/* Voice HELLO */
@@ -435,6 +436,7 @@ bool discord_voice_client::handle_frame(const std::string &data, ws_opcode opcod
 			break;
 			/* Voice ready */
 			case voice_opcode_connection_ready: {
+				session_invalid = false;
 				/* Video stream stuff comes in this frame too, but we can't use it (YET!) */
 				json &d = j["d"];
 				this->ip = d["ip"].get<std::string>();
