@@ -197,6 +197,7 @@ bool discord_voice_client::handle_frame(const std::string &data, ws_opcode opcod
 		switch (op) {
 			/* Ping acknowledgement */
 			case voice_opcode_connection_heartbeat_ack:
+				log(dpp::ll_trace, "Voice heartbeat acknowledged");
 				/* These opcodes do not require a response or further action */
 			break;
 			case voice_opcode_media_sink:
@@ -341,6 +342,7 @@ bool discord_voice_client::handle_frame(const std::string &data, ws_opcode opcod
 			case voice_opcode_connection_hello: {
 				if (j.find("d") != j.end() && j["d"].find("heartbeat_interval") != j["d"].end() && !j["d"]["heartbeat_interval"].is_null()) {
 					this->heartbeat_interval = j["d"]["heartbeat_interval"].get<uint32_t>();
+					log(dpp::ll_trace, "Voice heartbeat configured interval_ms=" + std::to_string(heartbeat_interval));
 				}
 
 				if (!modes.empty()) {
