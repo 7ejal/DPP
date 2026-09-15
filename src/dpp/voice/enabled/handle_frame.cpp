@@ -344,6 +344,8 @@ bool discord_voice_client::handle_frame(const std::string &data, ws_opcode opcod
 				}
 
 				if (!modes.empty()) {
+					/* A rejected resume must fall back to IDENTIFY on the next retry. */
+					modes.clear();
 					log(dpp::ll_debug, "Resuming voice session " + this->sessionid + "...");
 					json obj = {
 						{ "op", voice_opcode_connection_resume },
