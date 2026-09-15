@@ -94,7 +94,7 @@ cluster::cluster(const std::string &_token, uint32_t _intents, uint32_t _shards,
 	numshards(_shards), cluster_id(_cluster_id), maxclusters(_maxclusters), rest_ping(0.0), cache_policy(policy), ws_mode(ws_json)
 {
 	socketengine = create_socket_engine(this);
-	pool = std::make_unique<thread_pool>(this, pool_threads > 4 ? pool_threads : 4);
+	pool = std::make_unique<thread_pool>(this, pool_threads == 0 ? 1 : pool_threads);
 	/* Instantiate REST request queues */
 	try {
 		/* NOTE: These no longer use threads. This instantiates 16+4 dpp::timer instances. */
