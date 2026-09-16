@@ -145,9 +145,9 @@ void discord_client::run()
 {
 	ready = false;
 	message_queue.clear();
-	log(dpp::ll_trace, "Gateway read loop starting with timer_handle=" + std::to_string(timer_handle));
+	log(dpp::ll_debug, "Gateway read loop starting with timer_handle=" + std::to_string(timer_handle));
 	ssl_connection::read_loop();
-	log(dpp::ll_trace, "Gateway read loop registered timer_handle=" + std::to_string(timer_handle));
+	log(dpp::ll_debug, "Gateway read loop registered timer_handle=" + std::to_string(timer_handle));
 }
 
 bool discord_client::handle_frame(const std::string &buffer, ws_opcode opcode)
@@ -230,7 +230,7 @@ bool discord_client::handle_frame(const std::string &buffer, ws_opcode opcode)
 					auto heartbeat = d->find("heartbeat_interval");
 					if (heartbeat != d->end() && !heartbeat->is_null()) {
 						this->heartbeat_interval = heartbeat->get<uint32_t>();
-						log(dpp::ll_trace, "Gateway heartbeat interval_ms=" + std::to_string(heartbeat_interval));
+						log(dpp::ll_debug, "Gateway heartbeat interval_ms=" + std::to_string(heartbeat_interval));
 					}
 				}
 
@@ -300,12 +300,12 @@ bool discord_client::handle_frame(const std::string &buffer, ws_opcode opcode)
 			case ft_heartbeat_ack:
 				this->last_heartbeat_ack = time(nullptr);
 				websocket_ping = utility::time_f() - ping_start;
-				log(dpp::ll_trace, "Gateway heartbeat acknowledged");
+				log(dpp::ll_debug, "Gateway heartbeat acknowledged");
 			break;
 			case ft_heartbeat:
 				last_ping_message = jsonobj_to_string(json({{"op", ft_heartbeat}, {"d", last_seq}}));
 				queue_message(last_ping_message, true);
-				log(dpp::ll_trace, "Gateway requested an immediate heartbeat");
+				log(dpp::ll_debug, "Gateway requested an immediate heartbeat");
 			break;
 			case ft_identify:
 			case ft_presence:
@@ -416,7 +416,7 @@ size_t discord_client::get_queue_size()
 
 void discord_client::one_second_timer()
 {
-	log(dpp::ll_trace, "Gateway one-second timer tick handle=" + std::to_string(timer_handle));
+	log(dpp::ll_debug, "Gateway one-second timer tick handle=" + std::to_string(timer_handle));
 	websocket_client::one_second_timer();
 
 	/* This all only triggers if we are connected (have completed websocket, and received READY or RESUMED) */
@@ -459,7 +459,7 @@ void discord_client::one_second_timer()
 				last_ping_message = jsonobj_to_string(json({{"op", ft_heartbeat}, {"d", last_seq}}));
 				queue_message(last_ping_message, true);
 				last_heartbeat = time(nullptr);
-				log(dpp::ll_trace, "Sending Gateway heartbeat with seq=" + std::to_string(last_seq));
+				log(dpp::ll_debug, "Sending Gateway heartbeat with seq=" + std::to_string(last_seq));
 			}
 		}
 	}
