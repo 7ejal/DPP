@@ -22,6 +22,7 @@
 #include <dpp/export.h>
 #include <dpp/socket.h>
 #include <cstdint>
+#include <ctime>
 #include <unordered_map>
 #include <memory>
 #include <string_view>
@@ -298,6 +299,11 @@ protected:
 	 * @brief Socket engine statistics
 	 */
 	socket_stats stats{};
+
+	/**
+	 * @brief Last second in which this engine advanced its owner's timers
+	 */
+	time_t last_time{time(nullptr)};
 
 	/**
 	 * @brief Find a file descriptors socket events

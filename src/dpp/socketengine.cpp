@@ -81,8 +81,6 @@ socket_engine_base::~socket_engine_base() {
 #endif
 }
 
-time_t last_time = time(nullptr);
-
 socket_events* socket_engine_base::get_fd(dpp::socket fd) {
 	std::unique_lock lock(fds_mutex);
 	auto iter = fds.find(fd);
