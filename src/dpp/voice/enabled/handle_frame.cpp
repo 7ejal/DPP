@@ -97,6 +97,10 @@ bool discord_voice_client::handle_frame(const std::string &data, ws_opcode opcod
 	if (opcode == OP_BINARY && data.size() >= 3) {
 
 		dave_binary_header_t dave_header(data);
+		if (!mls_state || !mls_state->dave_session) {
+			log(ll_warning, "Ignoring DAVE binary frame before MLS state is ready");
+			return true;
+		}
 
 		/* These binaries also contains sequence number we need to save */
 		receive_sequence = dave_header.seq;
@@ -230,12 +234,20 @@ bool discord_voice_client::handle_frame(const std::string &data, ws_opcode opcod
 			}
 			break;
 			case voice_client_dave_mls_invalid_commit_welcome: {
+				if (!mls_state) {
+					log(ll_warning, "Ignoring DAVE invalid commit before MLS state is ready");
+					break;
+				}
 				this->mls_state->transition_id = j["d"]["transition_id"];
 				log(ll_debug, "voice_client_dave_mls_invalid_commit_welcome transition id " + std::to_string(this->mls_state->transition_id));
 			}
 			break;
 			case voice_client_dave_execute_transition: {
 				log(ll_debug, "voice_client_dave_execute_transition");
+				if (!mls_state) {
+					log(ll_warning, "Ignoring DAVE transition before MLS state is ready");
+					break;
+				}
 				this->mls_state->transition_id = j["d"]["transition_id"];
 
 				if (this->mls_state->pending_transition.is_pending && this->execute_pending_upgrade_downgrade()) {
@@ -250,6 +262,10 @@ bool discord_voice_client::handle_frame(const std::string &data, ws_opcode opcod
 			break;
 			/* "The protocol only uses this opcode to indicate when a downgrade to protocol version 0 is upcoming." */
 			case voice_client_dave_prepare_transition: {
+				if (!mls_state) {
+					log(ll_warning, "Ignoring DAVE preparation before MLS state is ready");
+					break;
+				}
 				this->mls_state->transition_id = j["d"]["transition_id"];
 				uint64_t protocol_version = j["d"]["protocol_version"];
 
