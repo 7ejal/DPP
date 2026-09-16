@@ -145,7 +145,9 @@ void discord_client::run()
 {
 	ready = false;
 	message_queue.clear();
+	log(dpp::ll_trace, "Gateway read loop starting with timer_handle=" + std::to_string(timer_handle));
 	ssl_connection::read_loop();
+	log(dpp::ll_trace, "Gateway read loop registered timer_handle=" + std::to_string(timer_handle));
 }
 
 bool discord_client::handle_frame(const std::string &buffer, ws_opcode opcode)
@@ -414,6 +416,7 @@ size_t discord_client::get_queue_size()
 
 void discord_client::one_second_timer()
 {
+	log(dpp::ll_trace, "Gateway one-second timer tick handle=" + std::to_string(timer_handle));
 	websocket_client::one_second_timer();
 
 	/* This all only triggers if we are connected (have completed websocket, and received READY or RESUMED) */
