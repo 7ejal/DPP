@@ -226,8 +226,10 @@ bool discord_client::handle_frame(const std::string &buffer, ws_opcode opcode)
 				auto d = j.find("d");
 				if (d != j.end()) {
 					auto heartbeat = d->find("heartbeat_interval");
-					if (heartbeat != d->end() && !heartbeat->is_null())
+					if (heartbeat != d->end() && !heartbeat->is_null()) {
 						this->heartbeat_interval = heartbeat->get<uint32_t>();
+						log(dpp::ll_trace, "Gateway heartbeat interval_ms=" + std::to_string(heartbeat_interval));
+					}
 				}
 
 				if (last_seq != 0U && !sessionid.empty()) {
@@ -296,8 +298,13 @@ bool discord_client::handle_frame(const std::string &buffer, ws_opcode opcode)
 			case ft_heartbeat_ack:
 				this->last_heartbeat_ack = time(nullptr);
 				websocket_ping = utility::time_f() - ping_start;
+				log(dpp::ll_trace, "Gateway heartbeat acknowledged");
 			break;
 			case ft_heartbeat:
+				last_ping_message = jsonobj_to_string(json({{"op", ft_heartbeat}, {"d", last_seq}}));
+				queue_message(last_ping_message, true);
+				log(dpp::ll_trace, "Gateway requested an immediate heartbeat");
+			break;
 			case ft_identify:
 			case ft_presence:
 			case ft_voice_state_update:
@@ -443,12 +450,13 @@ void discord_client::one_second_timer()
 		/* Send pings (heartbeat opcodes) before each interval. We send them slightly more regular than expected,
 		 * just to be safe.
 		 */
-		if (this->heartbeat_interval && this->last_seq) {
+		if (this->heartbeat_interval) {
 			/* Check if we're due to emit a heartbeat */
 			if (time(nullptr) > last_heartbeat + ((heartbeat_interval / 1000.0) * 0.75)) {
 				last_ping_message = jsonobj_to_string(json({{"op", ft_heartbeat}, {"d", last_seq}}));
 				queue_message(last_ping_message, true);
 				last_heartbeat = time(nullptr);
+				log(dpp::ll_trace, "Sending Gateway heartbeat with seq=" + std::to_string(last_seq));
 			}
 		}
 	}
