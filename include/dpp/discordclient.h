@@ -59,6 +59,10 @@ class cluster;
  */
 constexpr time_t RECONNECT_INTERVAL = 5;
 
+constexpr time_t gateway_heartbeat_ack_timeout_seconds(uint32_t heartbeat_interval_ms) {
+	return static_cast<time_t>((static_cast<uint64_t>(heartbeat_interval_ms) * 2 + 999) / 1000);
+}
+
 /**
  * @brief Represents different event opcodes sent and received on a shard websocket
  *

@@ -423,7 +423,7 @@ void discord_client::one_second_timer()
 		 * This can happen to TCP connections which is why we have heartbeats in the first place.
 		 * Miss two ACKS, forces a reconnection.
 		 */
-		if ((time(nullptr) - this->last_heartbeat_ack) > heartbeat_interval * 2) {
+		if ((time(nullptr) - this->last_heartbeat_ack) > gateway_heartbeat_ack_timeout_seconds(heartbeat_interval)) {
 			log(dpp::ll_warning, "Missed heartbeat ACK, forcing reconnection to session " + sessionid);
 			message_queue.clear();
 			close_socket(sfd);
