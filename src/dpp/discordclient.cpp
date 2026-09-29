@@ -426,7 +426,12 @@ void discord_client::one_second_timer()
 		if ((time(nullptr) - this->last_heartbeat_ack) > gateway_heartbeat_ack_timeout_seconds(heartbeat_interval)) {
 			log(dpp::ll_warning, "Missed heartbeat ACK, forcing reconnection to session " + sessionid);
 			message_queue.clear();
-			close_socket(sfd);
+			/* Use the full websocket close path so the socket is unregistered,
+			 * the fd is invalidated, and exactly one reconnect is scheduled.
+			 * Raw close_socket(sfd) leaves the stale client marked connected and
+			 * can repeatedly close an fd number that the OS has already reused.
+			 */
+			this->close();
 			return;
 		}
 
