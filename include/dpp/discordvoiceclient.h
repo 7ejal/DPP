@@ -510,7 +510,7 @@ class DPP_EXPORT discord_voice_client : public websocket_client
 	/**
 	 * @brief File descriptor for UDP connection
 	 */
-	dpp::socket fd{};
+	dpp::socket fd{INVALID_SOCKET};
 
 	/**
 	 * @brief Secret key for encrypting voice.
