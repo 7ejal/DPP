@@ -51,6 +51,8 @@ void discord_voice_client::cleanup()
 	}
 	if (fd != INVALID_SOCKET) {
 		owner->socketengine->delete_socket(fd);
+		close_socket(fd);
+		fd = INVALID_SOCKET;
 	}
 }
 
