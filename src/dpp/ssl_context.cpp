@@ -52,12 +52,11 @@ void release_ssl_context(uint16_t port) {
 }
 
 wrapped_ssl_ctx* generate_ssl_context(uint16_t port, const std::string &private_key, const std::string &public_key) {
-	{
-		std::shared_lock lock(context_mutex);
-		for (const auto& [p, ctx] : contexts) {
-			if (p == port) {
-				return ctx.get();
-			}
+	/* Keep cache lookup and construction atomic across concurrent runtimes. */
+	std::unique_lock lock(context_mutex);
+	for (const auto& [p, ctx] : contexts) {
+		if (p == port) {
+			return ctx.get();
 		}
 	}
 
@@ -100,7 +99,6 @@ wrapped_ssl_ctx* generate_ssl_context(uint16_t port, const std::string &private_
 		throw dpp::connection_exception(err_ssl_version, "Failed to set minimum SSL version!");
 	}
 
-	std::unique_lock lock(context_mutex);
 	contexts.emplace_back(port, std::move(context));
 	return contexts.back().second.get();
 }
