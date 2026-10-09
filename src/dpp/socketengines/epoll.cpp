@@ -134,7 +134,6 @@ struct DPP_EXPORT socket_engine_epoll : public socket_engine_base {
 			}
 
 			if ((eh->flags & WANT_DELETION) != 0L) {
-				remove_socket(fd);
 				std::lock_guard<std::shared_mutex>	lg(this->fds_mutex);
 				fds.erase(fd);
 			}

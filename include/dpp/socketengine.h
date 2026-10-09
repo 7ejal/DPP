@@ -255,9 +255,8 @@ struct DPP_EXPORT socket_engine_base {
 
 	/**
 	 * @brief Delete a socket from the socket engine
-	 * @note This will not remove the socket immediately. It will set the
-	 * WANT_DELETION flag causing it to be removed as soon as is safe to do so
-	 * (once all events associated with it are completed).
+	 * @note Unregisters the native socket before the caller closes it. The
+	 * WANT_DELETION flag retains callback metadata until current events finish.
 	 * @param e File descriptor
 	 * @return true if socket was queued for deletion
 	 */
@@ -265,8 +264,7 @@ struct DPP_EXPORT socket_engine_base {
 
 	/**
 	 * @brief Iterate through the list of sockets and remove any
-	 * with WANT_DELETION set. This will also call implementation-specific
-	 * remove_socket() on each entry to be removed.
+	 * with WANT_DELETION set after current events have completed.
 	 */
 	void prune();
 

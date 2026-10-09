@@ -108,6 +108,11 @@ void socket_engine_base::inplace_modify_fd(dpp::socket fd, uint8_t extra_flags) 
 }
 
 void socket_engine_base::prune() {
+	{
+		std::unique_lock lock(fds_mutex);
+		/* Unregistered sockets may never produce another kernel event. */
+		std::erase_if(fds, [](const auto& entry) { return (entry.second->flags & WANT_DELETION) != 0; });
+	}
 	if (time(nullptr) != last_time) {
 		try {
 			owner->tick_timers();
@@ -139,6 +144,10 @@ bool socket_engine_base::delete_socket(dpp::socket fd) {
 	iter->second->flags |= WANT_DELETION;
 	stats.deletions++;
 	stats.active_fds--;
+	/* Unregister while the descriptor still belongs to this connection. The
+	 * caller closes it next; delaying this could target a reused descriptor. */
+	lock.unlock();
+	remove_socket(fd);
 	return true;
 }
 
