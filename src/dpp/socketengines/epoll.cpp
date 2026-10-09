@@ -120,7 +120,7 @@ struct DPP_EXPORT socket_engine_epoll : public socket_engine_base {
 					}
 				}
 
-				if ((ev.events & EPOLLIN) != 0U) {
+				if ((ev.events & EPOLLIN) != 0U && (eh->flags & WANT_DELETION) == 0L) {
 					if (eh->on_read) {
 						stats.reads++;
 						eh->on_read(fd, *eh);

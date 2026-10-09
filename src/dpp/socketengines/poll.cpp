@@ -116,7 +116,7 @@ struct DPP_EXPORT socket_engine_poll : public socket_engine_base {
 					eh->on_read(fd, *eh);
 				}
 
-				if ((revents & POLLOUT) != 0) {
+				if ((revents & POLLOUT) != 0 && (eh->flags & WANT_DELETION) == 0L) {
 					stats.writes++;
 					eh->flags &= ~WANT_WRITE;
 					update_socket(*eh);
