@@ -20,6 +20,7 @@
  *
  ************************************************************************************/
 #include <dpp/export.h>
+#include <atomic>
 #include <cerrno>
 #ifdef _WIN32
 	/* Windows-specific sockets includes */
@@ -61,7 +62,7 @@ namespace dpp {
 /**
  * @brief Unique ID of next socket (for end-user use)
  */
-uint64_t last_unique_id{1};
+std::atomic<uint64_t> last_unique_id{1};
 
 /**
  * @brief This is an opaque class containing openssl library specific structures.

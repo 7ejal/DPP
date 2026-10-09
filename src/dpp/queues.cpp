@@ -284,8 +284,9 @@ http_request_completion_t http_request::run(request_concurrency_queue* processor
 					{
 						std::lock_guard<std::mutex> lock(this_captured_mutex);
 						this_captured = false;
+						/* Keep destruction blocked until notification has finished. */
+						this_captured_signal.notify_all();
 					}
-					this_captured_signal.notify_all();
 				});
 			}
 		);
@@ -446,8 +447,8 @@ void request_concurrency_queue::post_request(std::unique_ptr<http_request> req)
 		auto where = std::lower_bound(requests_in.begin(), requests_in.end(), req->endpoint, compare_request{});
 		requests_in.emplace(where, std::move(req));
 	}
-	/* Immediately trigger requests in this queue */
-	tick_and_deliver_requests(in_index);
+	/* The socket-loop timer delivers requests. Running here could start the
+	 * same request twice or destroy its TLS client during socket callbacks. */
 }
 
 /* @brief Simple hash function for hashing urls into request pool values,
