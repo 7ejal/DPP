@@ -158,10 +158,10 @@ cluster::cluster(const std::string &_token, uint32_t _intents, uint32_t _shards,
 
 cluster::~cluster()
 {
+	this->shutdown();
 	delete webhook_server;
 	delete rest;
 	delete raw_rest;
-	this->shutdown();
 }
 
 request_queue* cluster::get_rest() {

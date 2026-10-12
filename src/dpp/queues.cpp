@@ -447,8 +447,8 @@ void request_concurrency_queue::post_request(std::unique_ptr<http_request> req)
 		auto where = std::lower_bound(requests_in.begin(), requests_in.end(), req->endpoint, compare_request{});
 		requests_in.emplace(where, std::move(req));
 	}
-	/* The socket-loop timer delivers requests. Running here could start the
-	 * same request twice or destroy its TLS client during socket callbacks. */
+	/* Deliver promptly on the socket thread, never on the posting worker. */
+	creator->socketengine->notify_requests();
 }
 
 /* @brief Simple hash function for hashing urls into request pool values,

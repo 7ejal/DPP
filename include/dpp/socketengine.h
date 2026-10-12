@@ -27,6 +27,7 @@
 #include <memory>
 #include <string_view>
 #include <functional>
+#include <atomic>
 #include <shared_mutex>
 #include <dpp/thread_pool.h>
 
@@ -268,6 +269,9 @@ struct DPP_EXPORT socket_engine_base {
 	 */
 	void prune();
 
+	/** @brief Notify the socket thread that HTTP requests are ready to deliver. */
+	void notify_requests();
+
 	/**
 	 * @brief Merge new flags in with the given file descriptor
 	 * @param fd file descriptor
@@ -282,6 +286,8 @@ struct DPP_EXPORT socket_engine_base {
 	const socket_stats& get_stats() const;
 
 protected:
+	std::atomic<bool> requests_pending{false};
+	virtual void wake() {}
 
 	/**
 	 * @brief Mutex for fds

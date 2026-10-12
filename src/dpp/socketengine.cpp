@@ -27,6 +27,7 @@
 #include <iostream>
 #include <dpp/cache.h>
 #include <dpp/cluster.h>
+#include <dpp/queues.h>
 
 namespace dpp {
 
@@ -107,11 +108,27 @@ void socket_engine_base::inplace_modify_fd(dpp::socket fd, uint8_t extra_flags) 
 	}
 }
 
+void socket_engine_base::notify_requests() {
+	if (!requests_pending.exchange(true)) wake();
+}
+
 void socket_engine_base::prune() {
 	{
 		std::unique_lock lock(fds_mutex);
 		/* Unregistered sockets may never produce another kernel event. */
 		std::erase_if(fds, [](const auto& entry) { return (entry.second->flags & WANT_DELETION) != 0; });
+	}
+	if (requests_pending.exchange(false)) {
+		try {
+			for (auto* requests : {owner->get_rest(), owner->get_raw_rest()}) {
+				if (!requests) continue;
+				for (auto& queue : requests->requests_in) {
+					queue->tick_and_deliver_requests(queue->in_index);
+				}
+			}
+		} catch (const std::exception&) {
+			owner->log(dpp::ll_error, "HTTP request dispatch failed; retrying via timer");
+		}
 	}
 	if (time(nullptr) != last_time) {
 		try {

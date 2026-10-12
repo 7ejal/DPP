@@ -24,6 +24,8 @@
 #include <dpp/cluster.h>
 #include <memory>
 #include <sys/epoll.h>
+#include <sys/eventfd.h>
+#include <cerrno>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <vector>
@@ -53,6 +55,7 @@ int modify_event(int epoll_handle, socket_events* eh, int new_events) {
 struct DPP_EXPORT socket_engine_epoll : public socket_engine_base {
 
 	int epoll_handle{INVALID_SOCKET};
+	dpp::raii_socket wake_fd{eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC)};
 	static constexpr size_t MAX_EVENTS = 65536;
 	std::array<struct epoll_event, MAX_EVENTS> events{};
 	std::mutex	sockets_mutex;
@@ -65,6 +68,13 @@ struct DPP_EXPORT socket_engine_epoll : public socket_engine_base {
 	explicit socket_engine_epoll(cluster* creator) : socket_engine_base(creator), epoll_handle(epoll_create(MAX_EVENTS)) {
 		if (epoll_handle == -1) {
 			throw dpp::connection_exception("Failed to initialise epoll()");
+		}
+		struct epoll_event event{};
+		event.events = EPOLLIN;
+		event.data.fd = wake_fd.fd;
+		if (wake_fd.fd == INVALID_SOCKET || epoll_ctl(epoll_handle, EPOLL_CTL_ADD, wake_fd.fd, &event) < 0) {
+			close(epoll_handle);
+			throw dpp::connection_exception("Failed to initialise HTTP request wakeup");
 		}
 		stats.engine_type = "epoll";
 	}
@@ -83,6 +93,11 @@ struct DPP_EXPORT socket_engine_epoll : public socket_engine_base {
 			epoll_event ev = events[j];
 
 			const int fd = ev.data.fd;
+			if (fd == wake_fd.fd) {
+				uint64_t count;
+				while (::read(wake_fd.fd, &count, sizeof(count)) < 0 && errno == EINTR) {}
+				continue;
+			}
 			auto eh = get_fd(fd);
 			if (eh == nullptr || fd == INVALID_SOCKET) {
 				continue;
@@ -182,6 +197,10 @@ struct DPP_EXPORT socket_engine_epoll : public socket_engine_base {
 	}
 
 protected:
+	void wake() final {
+		const uint64_t count = 1;
+		while (::write(wake_fd.fd, &count, sizeof(count)) < 0 && errno == EINTR) {}
+	}
 
 	bool remove_socket(dpp::socket fd) final {
 		struct epoll_event ev{};
