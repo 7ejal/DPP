@@ -56,7 +56,8 @@ struct DPP_EXPORT socket_engine_epoll : public socket_engine_base {
 
 	int epoll_handle{INVALID_SOCKET};
 	dpp::raii_socket wake_fd{eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC)};
-	static constexpr size_t MAX_EVENTS = 65536;
+	// Bound epoll_wait's per-call result batch, not the total registered sockets.
+	static constexpr size_t MAX_EVENTS = 1024;
 	std::array<struct epoll_event, MAX_EVENTS> events{};
 	std::mutex	sockets_mutex;
 
