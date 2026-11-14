@@ -235,6 +235,12 @@ using privacy_code_callback_t = std::function<void(const std::string&)>;
  */
 using full_reconnection_callback_t = std::function<void(bool)>;
 
+/** Optional detailed reconnection callback; the second argument is the
+ *  WebSocket voice close code (0 when the transport closed without a code).
+ *  If supplied, it replaces the legacy Boolean-only callback.
+ */
+using detailed_voice_reconnection_callback_t = std::function<void(bool, uint32_t)>;
+
 /** @brief Implements a discord voice connection.
  * Each discord_voice_client connects to one voice channel and derives from a websocket client.
  */
@@ -447,6 +453,8 @@ class DPP_EXPORT discord_voice_client : public websocket_client
 	 * This is to tell reconnect callback to clear session data for the next reconnect attempt
 	 */
 	bool session_invalid{};
+	/** The last voice WebSocket close code, or zero for a transport failure. */
+	uint32_t last_voice_close_code{};
 
 	/**
 	 * @brief Number of times we have tried to reconnect in the last few seconds
@@ -721,6 +729,8 @@ public:
 	class dpp::cluster* creator{};
 
 	full_reconnection_callback_t reconnection_callback;
+	/** Opt-in: preserves the exact voice WebSocket close code. Set before run(). */
+	detailed_voice_reconnection_callback_t detailed_reconnection_callback;
 
 	/**
 	 * @brief True when the thread is shutting down

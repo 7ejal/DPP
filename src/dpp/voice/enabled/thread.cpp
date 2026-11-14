@@ -45,10 +45,17 @@ void discord_voice_client::on_disconnect() {
 
 	/* If we've looped 5 or more times, abort the loop. */
 	if (terminating || times_looped >= 5) {
-		log(dpp::ll_warning, "Reached max loops whilst attempting to read from the websocket. Starting a full reconnection.");
-		bool si = this->session_invalid;
+		log(dpp::ll_warning, terminating
+			? "Voice websocket terminated after close code " + std::to_string(last_voice_close_code)
+			: "Reached max loops whilst attempting to read from the websocket. Starting a full reconnection.");
+		const bool si = this->session_invalid;
+		const uint32_t close_code = this->last_voice_close_code;
 		auto rc = reconnection_callback;
-		owner->queue_work(1, [rc, si]() { rc(si) ;});
+		auto detailed_rc = detailed_reconnection_callback;
+		owner->queue_work(1, [rc, detailed_rc, si, close_code]() {
+			if (detailed_rc) detailed_rc(si, close_code);
+			else rc(si);
+		});
 		return;
 	}
 	last_loop_time = current_time;
@@ -64,6 +71,7 @@ void discord_voice_client::on_disconnect() {
 		}
 		start = time(nullptr);
 		setup();
+		last_voice_close_code = 0;
 		terminating = false;
 		ssl_connection::connect();
 		websocket_client::connect();

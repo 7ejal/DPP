@@ -198,6 +198,7 @@ bool discord_voice_client::is_connected()
 
 void discord_voice_client::error(uint32_t errorcode)
 {
+	last_voice_close_code = errorcode;
 	const static std::map<uint32_t, std::string> errortext = {
 		{ 1000, "Socket shutdown" },
 		{ 1001, "Client is leaving" },
@@ -235,7 +236,10 @@ void discord_voice_client::error(uint32_t errorcode)
 	}
 	log(dpp::ll_warning, "Voice session error: " + std::to_string(errorcode) + " on channel " + std::to_string(channel_id) + ": " + error);
 
-	/* Errors 4004...4016 except 4014 are fatal and cause termination of the voice session */
+	/* Explicit Discord voice close codes >=4003 end this connection.
+	 * The owning application must distinguish terminal codes (including 4014)
+	 * from resumable failures before deciding whether to reconnect.
+	 */
 	if (errorcode >= 4003) {
 		stop_audio();
 		this->terminating = true;
