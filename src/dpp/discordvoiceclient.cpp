@@ -236,11 +236,18 @@ void discord_voice_client::error(uint32_t errorcode)
 	}
 	log(dpp::ll_warning, "Voice session error: " + std::to_string(errorcode) + " on channel " + std::to_string(channel_id) + ": " + error);
 
-	/* Explicit Discord voice close codes >=4003 end this connection.
-	 * The owning application must distinguish terminal codes (including 4014)
-	 * from resumable failures before deciding whether to reconnect.
+	/* WebSocket protocol/policy violations are not transient network errors.
+	 * Repeating an identical malformed frame or unsupported message must not
+	 * enter the automatic reconnect loop. Report the original code to the
+	 * owner exactly as we do for Discord's explicit terminal voice codes.
+	 *
+	 * RFC 6455: 1002 protocol error, 1003 unsupported data,
+	 * 1007 invalid UTF-8, 1008 policy violation, 1009 message too big,
+	 * 1010 missing required extension.
 	 */
-	if (errorcode >= 4003) {
+	const bool websocket_protocol_violation = errorcode == 1002 || errorcode == 1003
+		|| errorcode == 1007 || errorcode == 1008 || errorcode == 1009 || errorcode == 1010;
+	if (errorcode >= 4003 || websocket_protocol_violation) {
 		stop_audio();
 		this->terminating = true;
 		log(dpp::ll_error, "This is a non-recoverable error, giving up on voice connection");
